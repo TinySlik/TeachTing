@@ -1,6 +1,5 @@
 
 local AdBar = {}
---lua表 ！！！！！ 
 
 function AdBar.new()
     local sprite = display.newSprite("#AdBar.png")

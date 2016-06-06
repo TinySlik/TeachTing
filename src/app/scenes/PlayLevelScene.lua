@@ -1,6 +1,6 @@
 
 local Levels = import("..data.Levels")
-local Board = import("..views.Board")
+local Board = import("..views.MyBoard")
 local AdBar = import("..views.AdBar")
 
 local PlayLevelScene = class("PlayLevelScene", function()
@@ -13,12 +13,12 @@ function PlayLevelScene:ctor(levelIndex)
     bg:setPosition(display.cx, display.top - bg:getContentSize().height / 2)
     self:addChild(bg)
 
-    local title = display.newSprite("#Title.png", display.left + 150, display.top - 50)
-    title:setScale(0.5)
-    self:addChild(title)
+    -- local title = display.newSprite("#Title.png", display.left + 150, display.top - 50)
+    -- title:setScale(0.5)
+    -- self:addChild(title)
 
-    local adBar = AdBar.new()
-    self:addChild(adBar)
+    -- local adBar = AdBar.new()
+    -- self:addChild(adBar)
 
     local label = cc.ui.UILabel.new({
         UILabelType = 1,

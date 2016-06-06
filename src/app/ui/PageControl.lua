@@ -36,6 +36,7 @@ function PageControl:onTouchEndedWithoutTap(x, y)
         end
         if i > count then index = count end
     end
+
     self:scrollToCell(index, true)
 end
 
