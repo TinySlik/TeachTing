@@ -86,7 +86,7 @@ function Board:ctor(levelData)
         return self:onTouch(event.name, event.x, event.y)
     end)
 
-    self:check()
+    self:checkAll()
 end
 
 function Board:checkLevelCompleted()
@@ -101,7 +101,7 @@ function Board:checkLevelCompleted()
     end
 end
 
-function Board:getCoin(row, col)
+function Board:getCell(row, col)
     if self.grid[row] then
         return self.grid[row][col]
     end
@@ -127,6 +127,88 @@ function Board:flipCoin(coin, includeNeighbour)
             self:flipCoin(self:getCoin(coin.row, coin.col - 1))
             self:flipCoin(self:getCoin(coin.row, coin.col + 1))
         end, 0.25)
+    end
+end
+
+function Board:checkAll()
+    local padding = NODE_PADDING * GAME_CELL_EIGHT_ADD_SCALE * 1.65
+    for _, cell in ipairs(self.cells) do
+        self:checkCell(cell)
+    end
+end
+
+function Board:checkCell(cell)
+    local listH = {}
+    listH [#listH + 1] = cell
+    local i=cell.col
+    --格子中左边对象是否相同的遍历
+    while i > 1 do
+        i = i -1
+        local cell_left = self:getCell(cell.row,i)
+        if cell.nodeType == cell_left.nodeType then
+            listH [#listH + 1] = cell_left
+        else
+            break
+        end
+    end
+    --格子中右边对象是否相同的遍历
+    if cell.col ~= self.cols then
+        for j=cell.col+1 , self.cols do
+            local cell_right = self:getCell(cell.row,j)
+            if cell.nodeType == cell_right.nodeType then
+                listH [#listH + 1] = cell_right
+            else
+                break
+            end
+        end
+    end
+    --目前的当前格子的左右待消除对象(连同自己)
+
+    --print(#listH)
+
+    if #listH < 3 then
+    else
+        -- print("find a 3 coup H cell")
+        for i,v in pairs(listH) do
+            v.isNeedClean = true
+        end
+
+    end
+    for i=2,#listH do
+        listH[i] = nil
+    end
+
+    --判断格子的上边的待消除对象
+
+    if cell.row ~= self.rows then
+        for j=cell.row+1 , self.rows do
+            local cell_up = self:getCell(j,cell.col)
+            if cell.nodeType == cell_up.nodeType then
+                listH [#listH + 1] = cell_up
+            else
+                break
+            end
+        end
+    end
+
+    local i=cell.row
+
+    --格子中下面对象是否相同的遍历
+    while i > 1 do
+        i = i -1
+        local cell_down = self:getCell(i,cell.col)
+        if cell.nodeType == cell_down.nodeType then
+            listH [#listH + 1] = cell_down
+        else
+            break
+        end
+    end
+
+    if #listH < 3 then
+    else
+        for i,v in pairs(listH) do
+            v.isNeedClean = true
+        end
     end
 end
 

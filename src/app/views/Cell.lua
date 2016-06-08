@@ -20,7 +20,7 @@ local ourCellsName =
     {"#xia.png"},
 }
 
-local Coin = class("Coin", function(nodeType)
+local Cell = class("Cell", function(nodeType)
     local index 
     if nodeType then
         index = nodeType
@@ -32,7 +32,7 @@ local Coin = class("Coin", function(nodeType)
     return sprite
 end)
 
-function Coin:flip(onComplete)
+function Cell:flip(onComplete)
     local frames = display.newFrames("Coin%04d.png", 1, 8, not self.isWhite)
     local animation = display.newAnimation(frames, 0.3 / 8)
     self:playAnimationOnce(animation, false, onComplete)
@@ -58,4 +58,4 @@ function Coin:flip(onComplete)
     self.isWhite = not self.isWhite
 end
 
-return Coin
+return Cell
