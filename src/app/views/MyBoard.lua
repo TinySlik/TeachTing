@@ -12,8 +12,9 @@ local COIN_ZORDER    = 1000
 
 function Board:ctor(levelData)
     cc.GameObject.extend(self):addComponent("components.behavior.EventProtocol"):exportMethods()
+    math.randomseed(tostring(os.time()):reverse():sub(1, 6))
 
-    self.batch = display.newBatchNode(GAME_TEXTURE_IMAGE_FILENAME)
+    self.batch = display.newNode()
     self.batch:setPosition(display.cx, display.cy)
     self:addChild(self.batch)
 
@@ -26,7 +27,6 @@ function Board:ctor(levelData)
     if self.cols <= 8 then
         local offsetX = -math.floor(NODE_PADDING * self.cols / 2) - NODE_PADDING / 2
         local offsetY = -math.floor(NODE_PADDING * self.rows / 2) - NODE_PADDING / 2
-        -- create board, place all cells
         for row = 1, self.rows do
             local y = row * NODE_PADDING + offsetY
             for col = 1, self.cols do
@@ -37,8 +37,8 @@ function Board:ctor(levelData)
 
                 local node = self.grid[row][col]
                 if node ~= Levels.NODE_IS_EMPTY then
-                    local cell = Cell.new(node)
-                    cell:setScale(GAME_CELL_STAND_SCALE)
+                    local cell = Cell.new()
+                    cell:setScale(GAME_CELL_STAND_SCALE * 1.65)
                     cell:setPosition(x, y)
                     cell.row = row
                     cell.col = col
@@ -53,8 +53,7 @@ function Board:ctor(levelData)
         NODE_PADDING = NODE_PADDING * GAME_CELL_EIGHT_ADD_SCALE
         local offsetX = -math.floor(NODE_PADDING * self.cols / 2) - NODE_PADDING / 2
         local offsetY = -math.floor(NODE_PADDING * self.rows / 2) - NODE_PADDING / 2
-        GAME_CELL_STAND_SCALE = GAME_CELL_EIGHT_ADD_SCALE * GAME_CELL_STAND_SCALE
-        -- create board, place all cells
+        GAME_CELL_STAND_SCALE = GAME_CELL_EIGHT_ADD_SCALE * GAME_CELL_STAND_SCALE 
         for row = 1, self.rows do
             local y = row * NODE_PADDING + offsetY
             for col = 1, self.cols do
@@ -65,8 +64,8 @@ function Board:ctor(levelData)
 
                 local node = self.grid[row][col]
                 if node ~= Levels.NODE_IS_EMPTY then
-                    local cell = Cell.new(node)
-                    cell:setScale(GAME_CELL_STAND_SCALE)
+                    local cell = Cell.new()
+                    cell:setScale(GAME_CELL_STAND_SCALE * 1.65)
                     cell:setPosition(x, y)
                     cell.row = row
                     cell.col = col
@@ -87,6 +86,7 @@ function Board:ctor(levelData)
         return self:onTouch(event.name, event.x, event.y)
     end)
 
+    self:check()
 end
 
 function Board:checkLevelCompleted()
@@ -146,6 +146,48 @@ function Board:onTouch(event, x, y)
     --         break
     --     end
     -- end
+end
+
+function Board:check()
+    local i = 1
+    local j = 1
+    while i <= self.rows do
+        j = 1
+        while j <= self.cols do
+            local cell = self.grid[i][j]
+            local sum = 1
+            while j < self.cols and cell.nodeType == self.grid[i][j+1].nodeType do
+                cell = self.grid[i][j+1]
+                j = j + 1
+                sum = sum + 1
+            end
+            if sum >= 3 then
+                print(i,j)
+            end
+            j = j + 1
+        end
+        i = i + 1
+    end
+
+    i = 1
+    j = 1
+    while i <= self.cols do
+        j = 1
+        while j <= self.rows do
+            local cell = self.grid[j][i]
+            local sum = 1
+            while j < self.rows and cell.nodeType == self.grid[j+1][i].nodeType do
+                cell = self.grid[j+1][i]
+                j = j + 1
+                sum = sum + 1
+            end
+            if sum >= 3 then
+                print(j,i)
+            end
+            j = j + 1
+        end
+        i = i + 1
+    end
 end
 
 function Board:onEnter()

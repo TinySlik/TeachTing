@@ -1,13 +1,34 @@
 
 local Levels = import("..data.MyLevels")
 
+local ourCellsName = 
+{
+    {"#apple1.png","#apple2.png"}, 
+    {"#cake1.png","#cake2.png"},
+    {"#manggo1.png","#manggo2.png"},
+    {"#musrom1.png","#musrom2.png"},
+    {"#oieo1.png","#oieo2.png"},
+    {"#paplegg1.png","#paplegg.png"},
+    {"#pear1.png","#pear2.png"},
+    {"#qingcai1.png","#qingcai2.png"},
+    {"#bluebeary.png"},
+    {"#egg.png"},
+    {"#ou.png"},
+    {"#robo.png"},
+    {"#shanzhu.png"},
+    {"#tomato.png"},
+    {"#xia.png"},
+}
+
 local Coin = class("Coin", function(nodeType)
-    local index = 1
-    -- if nodeType == Levels.NODE_IS_BLACK then
-    --     index = 8
-    -- end
-    local sprite = display.newSprite(string.format("#Coin%04d.png", index))
-    sprite.isWhite = index == 1
+    local index 
+    if nodeType then
+        index = nodeType
+    else
+        index =  math.floor(math.random(7)) 
+    end
+    local sprite = display.newSprite(ourCellsName[index][1])
+    sprite.nodeType = index 
     return sprite
 end)
 
