@@ -1,6 +1,11 @@
 local Levels = import("..data.MyLevels")
 local Cell   = import("..views.Cell")
 
+local curSwapBeginRow = -1
+local curSwapBeginCol = -1
+
+local scheduler = cc.Director:getInstance():getScheduler()
+
 local Board = class("Board", function()
     return display.newNode()
 end)
@@ -100,6 +105,7 @@ function Board:ctor(levelData)
                 end
             end
         end
+        GAME_CELL_EIGHT_ADD_SCALE = 1.0
     end
 
     self:setNodeEventEnabled(true)
@@ -154,7 +160,6 @@ function Board:changeSingedCell(onAnimationComplete)
             cell:setScale(GAME_CELL_STAND_SCALE * GAME_CELL_EIGHT_ADD_SCALE * 1.65)
             cell.row = self.rows + drop_pad
             cell.col = col
-            self.grid[self.rows + 1 + drop_pad][col] = cell
             self.grid[self.rows +  drop_pad][col] = cell
             if onAnimationComplete == nil then
                 self.batch:removeChild(v, true)
@@ -223,20 +228,49 @@ function Board:changeSingedCell(onAnimationComplete)
     end
 end
 
-function Board:swap(row1,col1,row2,col2)
+function Board:swap(row1,col1,row2,col2,isAnimation,callBack)
     local temp
-    if self.grid[row1][col1] then
+    if self.grid[row1] and self.grid[row1][col1] then
         self.grid[row1][col1].row = row2
         self.grid[row1][col1].col = col2
     end
-    if self.grid[row2][col2] then
+    if self.grid[row1] and self.grid[row2][col2] then
         self.grid[row2][col2].row = row1
         self.grid[row2][col2].col = col2
     end
     
+    if self.grid[row1] == nil or self.grid[row2] == nil then
+        print("erro",row1,col1,row2,col2)
+        return
+    end
     temp = self.grid[row1][col1] 
     self.grid[row1][col1] = self.grid[row2][col2]
     self.grid[row2][col2] = temp
+
+    
+    if isAnimation ~= nil then
+        if isAnimation  then
+            local X1,Y1 = self.grid[row1][col1]:getPosition()
+            local X2,Y2 = self.grid[row2][col2]:getPosition()
+            if callBack then
+                self.grid[row1][col1]:runAction(transition.sequence({
+                        cc.MoveTo:create(0.8, cc.p(X2,Y2)),
+                        cc.CallFunc:create(function()
+                             callBack()   
+                        end)
+                    }))
+                self.grid[row2][col2]:runAction(cc.MoveTo:create(0.8, cc.p(X1,Y1)))
+            else
+                self.grid[row1][col1]:runAction(cc.MoveTo:create(0.8, cc.p(X2,Y2)))
+                self.grid[row2][col2]:runAction(cc.MoveTo:create(0.8, cc.p(X1,Y1)))
+            end
+            
+        else
+            local tempX,tempY = self.grid[row1][col1]:getPosition()
+            self.grid[row1][col1]:setPosition(self.grid[row2][col2]:getPositionX(),self.grid[row2][col2]:getPositionY())
+            self.grid[row2][col2]:setPosition(tempX,tempY)
+        end
+    end
 end
 
 
@@ -330,22 +364,44 @@ function Board:checkCell(cell)
 end
 
 function Board:onTouch(event, x, y)
-    if event ~= "began" or self.flipAnimationCount > 0 then return end
+    if event == "began" then
+        local row,col = self:getRandC(x, y)
+        curSwapBeginRow = row
+        curSwapBeginCol = col
+        print(row,col)
+    end
 
-    -- local padding = NODE_PADDING / 2
-    -- for _, coin in ipairs(self.cells) do
-    --     local cx, cy = coin:getPosition()
-    --     cx = cx + display.cx
-    --     cy = cy + display.cy
-    --     if x >= cx - padding
-    --         and x <= cx + padding
-    --         and y >= cy - padding
-    --         and y <= cy + padding then
-    --         self:flipCoin(coin, true)
-    --         break
-    --     end
-    -- end
+    if event == "ended" then
+        local row,col = self:getRandC(x, y)
+        print(row,col)
+
+        self:swap(curSwapBeginRow, curSwapBeginCol, row, col, true , function()
+            -- if self:checkAll() then
+            --     self:changeSingedCell(true)
+            -- end
+        end)
+        
+    end
+    
+    return true
 end
+
+function Board:getRandC(x,y)
+    local padding = NODE_PADDING / 2
+    for _, cell in ipairs(self.cells) do
+        local cx, cy = cell:getPosition()
+        cx = cx + display.cx
+        cy = cy + display.cy
+        if x >= cx - padding
+            and x <= cx + padding
+            and y >= cy - padding
+            and y <= cy + padding then
+            return cell.row , cell.col
+        end
+    end
+    return -1 , -1
+end
+
 
 function Board:check()
     local i = 1
@@ -395,7 +451,6 @@ end
 
 function Board:onExit()
     self:removeAllEventListeners()
-    GAME_CELL_EIGHT_ADD_SCALE = 1.0
     GAME_CELL_STAND_SCALE = GAME_CELL_EIGHT_ADD_SCALE * 0.75
     NODE_PADDING = 100 * 0.75
 end
