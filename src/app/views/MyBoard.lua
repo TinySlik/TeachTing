@@ -236,7 +236,7 @@ function Board:swap(row1,col1,row2,col2,isAnimation,callBack)
     end
     if self.grid[row1] and self.grid[row2][col2] then
         self.grid[row2][col2].row = row1
-        self.grid[row2][col2].col = col2
+        self.grid[row2][col2].col = col1
     end
     
     if self.grid[row1] == nil or self.grid[row2] == nil then
@@ -373,7 +373,6 @@ function Board:onTouch(event, x, y)
 
     if event == "ended" then
         local row,col = self:getRandC(x, y)
-        print(row,col)
 
         self:swap(curSwapBeginRow, curSwapBeginCol, row, col, true , function()
             -- if self:checkAll() then
