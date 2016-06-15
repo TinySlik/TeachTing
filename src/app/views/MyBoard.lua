@@ -441,7 +441,6 @@ function Board:onTouch(event, x, y)
                           isEnableTouch = true
                     end)
                 }))
-            cell_center:runAction(cc.ScaleTo:create(SWAP_TIME/2,CELL_SCALE))
             self.grid[curSwapBeginRow][curSwapBeginCol]:setLocalZOrder(CELL_ZORDER)
         end
         if event == "ended" then
@@ -467,12 +466,15 @@ function Board:onTouch(event, x, y)
                 if curSwapBeginRow - row > 1 then row = curSwapBeginRow - 1 end
                 if col -  curSwapBeginCol > 1 then col = curSwapBeginCol + 1 end
                 if curSwapBeginCol - col  > 1 then col = curSwapBeginCol - 1 end
-                    self:swap(row,col,curSwapBeginRow,curSwapBeginCol,function()
+                isEnableTouch = false
+                self:swap(row,col,curSwapBeginRow,curSwapBeginCol,true,function()
                         self:checkCell(self.grid[row][col])
                         self:checkCell(self.grid[curSwapBeginRow][curSwapBeginCol])
                         if self:checkNotClean() then
+                            isEnableTouch = true
                         else
-                            self:swap(row,col,curSwapBeginRow,curSwapBeginCol,function()
+                            isEnableTouch = false
+                            self:swap(row,col,curSwapBeginRow,curSwapBeginCol,true,function()
                                 isEnableTouch = true
                             end)
                         end
