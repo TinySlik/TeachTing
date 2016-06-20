@@ -15,6 +15,7 @@ local NODE_ZORDER    = 0
 
 local SWAP_TIME = 0.6
 local CELL_SCALE = 1.0
+local CELL_BIG_SCALE = 1.2
 
 local CELL_ZORDER    = 1000
 
@@ -112,8 +113,8 @@ function Board:ctor(levelData)
                 end
             end
         end
-        CELL_SCALE = GAME_CELL_STAND_SCALE * GAME_CELL_EIGHT_ADD_SCALE * 1.65
         GAME_CELL_EIGHT_ADD_SCALE = 1.0
+        CELL_SCALE = GAME_CELL_STAND_SCALE * GAME_CELL_EIGHT_ADD_SCALE * 1.65
     end
 
     self:setNodeEventEnabled(true)
@@ -124,6 +125,21 @@ function Board:ctor(levelData)
     while self:checkAll() do
         self:changeSingedCell()  
     end
+    self.bigHandel = scheduler:scheduleScriptFunc (function () 
+        if isInTouch and isEnableTouch then
+            if curSwapBeginRow == -1 or curSwapBeginCol == -1 then
+                return
+            else
+                if self.grid[curSwapBeginRow] and self.grid[curSwapBeginRow][curSwapBeginCol] then
+                    local cell_c = self.grid[curSwapBeginRow][curSwapBeginCol] 
+                    local sc = cell_c:getScaleX()
+                    if sc < CELL_BIG_SCALE * CELL_SCALE then
+                        cell_c:setScale( ( CELL_BIG_SCALE * CELL_SCALE - 1.0 ) / 8 +  sc )
+                    end
+                end
+            end
+        end
+    end , 1.0/60 , false)
 end
 
 function Board:getCell(row, col)
@@ -441,6 +457,7 @@ function Board:onTouch(event, x, y)
                           isEnableTouch = true
                     end)
                 }))
+            cell_center:runAction(cc.ScaleTo:create(SWAP_TIME/2,CELL_SCALE))
             self.grid[curSwapBeginRow][curSwapBeginCol]:setLocalZOrder(CELL_ZORDER)
         end
         if event == "ended" then
@@ -467,19 +484,22 @@ function Board:onTouch(event, x, y)
                 if col -  curSwapBeginCol > 1 then col = curSwapBeginCol + 1 end
                 if curSwapBeginCol - col  > 1 then col = curSwapBeginCol - 1 end
                 isEnableTouch = false
+
                 self:swap(row,col,curSwapBeginRow,curSwapBeginCol,true,function()
                         self:checkCell(self.grid[row][col])
                         self:checkCell(self.grid[curSwapBeginRow][curSwapBeginCol])
                         if self:checkNotClean() then
+                            self.grid[curSwapBeginRow][curSwapBeginCol]:setLocalZOrder(CELL_ZORDER)
                             isEnableTouch = true
                         else
                             isEnableTouch = false
                             self:swap(row,col,curSwapBeginRow,curSwapBeginCol,true,function()
+                                self.grid[curSwapBeginRow][curSwapBeginCol]:setLocalZOrder(CELL_ZORDER)
                                 isEnableTouch = true
                             end)
                         end
-                    end
-                    )
+                    end)
+                cell_center:runAction(cc.ScaleTo:create(SWAP_TIME/2,CELL_SCALE))
             else
                 AnimBack()
                 return
@@ -557,7 +577,9 @@ function Board:onEnter()
     self:setTouchEnabled(true)
 end
 
+
 function Board:onExit()
+    scheduler:unscheduleScriptEntry(self.bigHandel )
     self:removeAllEventListeners()
     GAME_CELL_STAND_SCALE = GAME_CELL_EIGHT_ADD_SCALE * 0.75
     NODE_PADDING = 100 * 0.75
