@@ -189,7 +189,8 @@ function Board:changeSingedCell(onAnimationComplete)
                 self.batch:removeChild(v, true)
                 self.grid[row][col] = nil
             else
-                --
+                self.batch:removeChild(v, true)
+                self.grid[row][col] = nil
             end
             
             self.cells[i] = cell
@@ -239,7 +240,17 @@ function Board:changeSingedCell(onAnimationComplete)
             end
         end
     else
-        --
+        for i=1,self.rows do
+            for j,v in pairs(DropListFinal) do
+                local y = i * NODE_PADDING + self.offsetY
+                local x = v.col * NODE_PADDING + self.offsetX
+                local cell_t = self.grid[i][v.col]
+                local x_t,y_t = cell_t:getPosition()
+                if cell_t and (math.abs(y_t - y) > NODE_PADDING/2 ) then
+                    cell_t :runAction(cc.MoveTo:create(0.4, cc.p(x,y)))
+                end
+            end
+        end
     end
 end
 
@@ -490,6 +501,7 @@ function Board:onTouch(event, x, y)
                         self:checkCell(self.grid[curSwapBeginRow][curSwapBeginCol])
                         if self:checkNotClean() then
                             self.grid[curSwapBeginRow][curSwapBeginCol]:setLocalZOrder(CELL_ZORDER)
+                            self:changeSingedCell(true)
                             isEnableTouch = true
                         else
                             isEnableTouch = false
