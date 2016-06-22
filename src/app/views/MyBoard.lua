@@ -12,6 +12,8 @@ end)
 
 local NODE_PADDING   = 100 * GAME_CELL_STAND_SCALE
 local NODE_ZORDER    = 0
+local CELL_ANIM_TIME = 0.68
+local DROP_TIME = 1.64
 
 local SWAP_TIME = 0.6
 local CELL_SCALE = 1.0
@@ -148,7 +150,7 @@ function Board:getCell(row, col)
     end
 end
 
-function Board:changeSingedCell(onAnimationComplete)
+function Board:changeSingedCell(onAnimationComplete,timeScale)
     --统计所有的掉落项
 
     local DropList = {}
@@ -175,8 +177,13 @@ function Board:changeSingedCell(onAnimationComplete)
                     end
                 end
             end
-
-            local cell = Cell.new()
+            local cell = nil
+            if onAnimationComplete then
+                cell = Cell.new(CELL_ANIM_TIME,CELL_SCALE)
+            else
+                cell = Cell.new()
+            end
+            
             DropList [#DropList + 1] = cell
             DropListFinal [#DropListFinal + 1] = cell
             cell.isNeedClean = false
@@ -189,7 +196,8 @@ function Board:changeSingedCell(onAnimationComplete)
                 self.batch:removeChild(v, true)
                 self.grid[row][col] = nil
             else
-                self.batch:removeChild(v, true)
+                self.grid[row][col]:setLocalZOrder(CELL_ZORDER + 1)
+                self.grid[row][col]:Explod(CELL_SCALE,self.grid[row][col].cutOrder )
                 self.grid[row][col] = nil
             end
             
@@ -240,17 +248,44 @@ function Board:changeSingedCell(onAnimationComplete)
             end
         end
     else
+        local timeSc =  1.0
+        if timeScale then
+            timeSc = timeScale
+        end
+        
         for i=1,self.rows do
-            for j,v in pairs(DropListFinal) do
+            for j , v in pairs(DropListFinal) do
                 local y = i * NODE_PADDING + self.offsetY
                 local x = v.col * NODE_PADDING + self.offsetX
                 local cell_t = self.grid[i][v.col]
-                local x_t,y_t = cell_t:getPosition()
-                if cell_t and (math.abs(y_t - y) > NODE_PADDING/2 ) then
-                    cell_t :runAction(cc.MoveTo:create(0.4, cc.p(x,y)))
+                if cell_t then
+                    local x_t,y_t = cell_t:getPosition()
+                    if(math.abs(y_t - y) > NODE_PADDING/2 ) then
+                        local rand = math.random(100)/100.0 + 0.4
+                        cell_t:runAction(transition.sequence({
+                            cc.DelayTime:create(CELL_ANIM_TIME + cell_t.row / self.rows * 0.24  ),
+                            cc.ScaleTo:create(0.3*timeSc, CELL_SCALE * 1.13, CELL_SCALE * 0.93 ),
+                            cc.ScaleTo:create(0.5*timeSc, CELL_SCALE * 0.95, CELL_SCALE * 1.08 ),
+                            cc.ScaleTo:create(0.6*timeSc, CELL_SCALE * 1.055, CELL_SCALE * 0.97 ),
+                            cc.ScaleTo:create(0.8*timeSc, CELL_SCALE * 1.0, CELL_SCALE * 1.0 )
+                        }))
+                        cell_t:runAction(transition.sequence({
+                            cc.DelayTime:create((CELL_ANIM_TIME + cell_t.row / self.rows * 0.24)*timeSc  ),
+                            cc.EaseElasticOut:create(cc.MoveTo:create((DROP_TIME - 0.24 - 0.24)*timeSc , cc.p(x, y)),rand) 
+                        }))
+                    end 
                 end
             end
         end
+        self:runAction(transition.sequence(
+        {
+            cc.DelayTime:create((CELL_ANIM_TIME + DROP_TIME)*timeSc),
+            cc.CallFunc:create(function()
+                if self:checkAll() then
+                    self:changeSingedCell(true,0.75)
+                end
+            end)
+        }))
     end
 end
 
@@ -369,8 +404,8 @@ function Board:checkCell(cell)
         -- print("find a 3 coup H cell")
         for i,v in pairs(listH) do
             v.isNeedClean = true
+            v.cutOrder = i
         end
-
     end
     for i=2,#listH do
         listH[i] = nil
@@ -409,6 +444,7 @@ function Board:checkCell(cell)
     else
         for i,v in pairs(listH) do
             v.isNeedClean = true
+            v.cutOrder = i
         end
     end
 end
